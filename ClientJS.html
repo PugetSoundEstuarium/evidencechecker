@@ -1,0 +1,189 @@
+<script>
+(function () {
+  const data = window.APP_DATA || {};
+  const state = {
+    currentReveal: null
+  };
+
+  const els = {
+    appTitle: document.getElementById('appTitle'),
+    appSubtitle: document.getElementById('appSubtitle'),
+    statusBar: document.getElementById('statusBar'),
+    lockedView: document.getElementById('lockedView'),
+    revealView: document.getElementById('revealView'),
+    resultView: document.getElementById('resultView'),
+    confirmationView: document.getElementById('confirmationView'),
+    launchDateText: document.getElementById('launchDateText'),
+    codeInput: document.getElementById('codeInput'),
+    revealBtn: document.getElementById('revealBtn'),
+    revealError: document.getElementById('revealError'),
+    resultTitle: document.getElementById('resultTitle'),
+    resultMain: document.getElementById('resultMain'),
+    resultDetail: document.getElementById('resultDetail'),
+    progressCopy: document.getElementById('progressCopy'),
+    progressBar: document.getElementById('progressBar'),
+    registerForm: document.getElementById('registerForm'),
+    hiddenCode: document.getElementById('hiddenCode'),
+    nameInput: document.getElementById('nameInput'),
+    emailInput: document.getElementById('emailInput'),
+    visibilityInput: document.getElementById('visibilityInput'),
+    connectByEmail: document.getElementById('connectByEmail'),
+    shareEmail: document.getElementById('shareEmail'),
+    noteInput: document.getElementById('noteInput'),
+    registerError: document.getElementById('registerError'),
+    confirmTitle: document.getElementById('confirmTitle'),
+    confirmMain: document.getElementById('confirmMain'),
+    confirmDetail: document.getElementById('confirmDetail'),
+    confirmProgressCopy: document.getElementById('confirmProgressCopy'),
+    confirmProgressBar: document.getElementById('confirmProgressBar')
+  };
+
+  init();
+
+  function init() {
+    els.appTitle.textContent = data.appTitle || 'Night at the Estuary';
+    els.appSubtitle.textContent = data.appSubtitle || '';
+    els.launchDateText.textContent = formatDate(data.launchDate);
+    els.codeInput.value = data.code || '';
+
+    (data.visibilityOptions || []).forEach(opt => {
+      const option = document.createElement('option');
+      option.value = opt.value;
+      option.textContent = opt.label;
+      els.visibilityInput.appendChild(option);
+    });
+
+    updateStatusBar(data.publicState);
+
+    if (!data.launchOpen) {
+      showOnly('lockedView');
+    } else {
+      showOnly('revealView');
+    }
+
+    els.revealBtn.addEventListener('click', onReveal);
+    els.registerForm.addEventListener('submit', onRegister);
+
+    if (data.launchOpen && data.code) {
+      onReveal();
+    }
+  }
+
+  function onReveal() {
+    clearError(els.revealError);
+    const code = els.codeInput.value.trim();
+    if (!code) {
+      showError(els.revealError, 'Enter your code first.');
+      return;
+    }
+
+    els.revealBtn.disabled = true;
+    google.script.run
+      .withSuccessHandler(result => {
+        els.revealBtn.disabled = false;
+        if (!result.launchOpen) {
+          showOnly('lockedView');
+          return;
+        }
+        state.currentReveal = result;
+        els.hiddenCode.value = result.code;
+        renderReveal(result);
+      })
+      .withFailureHandler(err => {
+        els.revealBtn.disabled = false;
+        showError(els.revealError, err.message || 'Unable to reveal this code.');
+      })
+      .revealCode(code);
+  }
+
+  function renderReveal(result) {
+    const isFragment = result.itemType === 'fragment';
+    els.resultTitle.textContent = isFragment ? 'Evidence Found' : 'Investigation Unlocked';
+    els.resultMain.textContent = isFragment
+      ? `You’ve uncovered ${result.itemLabel}.`
+      : `You’ve received an ${result.itemLabel}.`;
+    els.resultDetail.textContent = isFragment
+      ? `This is one of ${result.totalFragments} fragments. When all are discovered, the investigation is complete.`
+      : `This grants you free admission to the Puget Sound Estuarium. Valid ${formatDate(result.passValidFrom)} through ${formatDate(result.passValidTo)}.`;
+
+    updateProgress(els.progressCopy, els.progressBar, result.progress, result.totalFragments);
+    showOnly('resultView');
+  }
+
+  function onRegister(evt) {
+    evt.preventDefault();
+    clearError(els.registerError);
+
+    const payload = {
+      code: els.hiddenCode.value,
+      name: els.nameInput.value,
+      email: els.emailInput.value,
+      visibility: els.visibilityInput.value,
+      connectByEmail: els.connectByEmail.checked,
+      shareEmail: els.shareEmail.checked,
+      note: els.noteInput.value
+    };
+
+    const submitBtn = els.registerForm.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+
+    google.script.run
+      .withSuccessHandler(result => {
+        submitBtn.disabled = false;
+        renderConfirmation(result);
+      })
+      .withFailureHandler(err => {
+        submitBtn.disabled = false;
+        showError(els.registerError, err.message || 'Unable to complete registration.');
+      })
+      .submitRegistration(payload);
+  }
+
+  function renderConfirmation(result) {
+    const isFragment = result.itemType === 'fragment';
+    els.confirmTitle.textContent = isFragment ? 'Fragment Registered' : 'Pass Activated';
+    els.confirmMain.textContent = result.confirmationMessage;
+    els.confirmDetail.textContent = isFragment
+      ? (result.allFragmentsFound
+          ? 'All fragments have now been discovered. The group prize is unlocked.'
+          : `${result.progress} of ${result.totalFragments} fragments have been found.`)
+      : `Visit the Estuarium anytime before ${formatDate(result.passValidTo)}.`;
+    updateProgress(els.confirmProgressCopy, els.confirmProgressBar, result.progress, result.totalFragments);
+    updateStatusBar({ progress: result.progress, totalFragments: result.totalFragments });
+    showOnly('confirmationView');
+  }
+
+  function updateStatusBar(publicState) {
+    if (!publicState) return;
+    els.statusBar.textContent = `Fragments found: ${publicState.progress || 0} of ${publicState.totalFragments || 15}`;
+  }
+
+  function updateProgress(copyEl, barEl, progress, total) {
+    copyEl.textContent = `${progress} of ${total} fragments have been found`;
+    const pct = total ? Math.max(0, Math.min(100, (progress / total) * 100)) : 0;
+    barEl.style.width = `${pct}%`;
+  }
+
+  function showOnly(id) {
+    ['lockedView', 'revealView', 'resultView', 'confirmationView'].forEach(viewId => {
+      els[viewId].classList.toggle('hidden', viewId !== id);
+    });
+  }
+
+  function showError(el, msg) {
+    el.textContent = msg;
+    el.classList.remove('hidden');
+  }
+
+  function clearError(el) {
+    el.textContent = '';
+    el.classList.add('hidden');
+  }
+
+  function formatDate(raw) {
+    if (!raw) return '';
+    const d = new Date(`${raw}T00:00:00`);
+    return d.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
+  }
+})();
+</script>

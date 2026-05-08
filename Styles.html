@@ -1,0 +1,109 @@
+<style>
+  :root {
+    --bg: #08111f;
+    --card: #0d1830;
+    --text: #eaf1ff;
+    --muted: #aebad6;
+    --line: rgba(255,255,255,0.14);
+    --accent: #7fb3ff;
+    --accent-2: #244191;
+    --success: #9dd6b2;
+    --error: #ffb3b3;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: Calibri, Arial, sans-serif;
+    background: linear-gradient(180deg, #03060d 0%, var(--bg) 100%);
+    color: var(--text);
+  }
+  .shell {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .card {
+    width: 100%;
+    max-width: 720px;
+    background: rgba(13, 24, 48, 0.96);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 28px;
+    box-shadow: 0 18px 50px rgba(0,0,0,0.35);
+  }
+  .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+  h1, h2 { margin: 0 0 12px; }
+  .sub, .muted { color: var(--muted); }
+  .status-bar {
+    margin: 18px 0 22px;
+    padding: 12px 14px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    font-size: 14px;
+    color: var(--muted);
+  }
+  .hidden { display: none; }
+  .field { margin: 16px 0; }
+  label { display: block; margin-bottom: 8px; font-weight: 600; }
+  input, select, textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: rgba(255,255,255,0.05);
+    color: var(--text);
+    font: inherit;
+  }
+  select option { color: #111; }
+  .check {
+    display: block;
+    font-weight: normal;
+    margin: 12px 0;
+    color: var(--muted);
+  }
+  .check input { width: auto; margin-right: 8px; }
+  .btn {
+    display: inline-block;
+    border: 0;
+    border-radius: 999px;
+    padding: 12px 18px;
+    background: var(--accent-2);
+    color: white;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .btn:hover { filter: brightness(1.07); }
+  .error {
+    margin-top: 12px;
+    color: var(--error);
+  }
+  .progress-box {
+    margin: 18px 0 22px;
+    padding: 14px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--line);
+  }
+  .progress-copy { margin-bottom: 10px; }
+  .progress-track {
+    width: 100%;
+    height: 12px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.08);
+    overflow: hidden;
+  }
+  .progress-bar {
+    width: 0%;
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), #cddfff);
+  }
+</style>
